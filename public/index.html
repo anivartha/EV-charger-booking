@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EV Charge Booking System Interface</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: #f7fafc; }
+    .container { width: 100%; max-width: 960px; margin: 2rem auto; }
+  </style>
+</head>
+<body>
+  <div class="container p-4">
+    <header class="text-center mb-8">
+      <h1 class="text-4xl font-extrabold text-blue-800">EV Charge Booking System</h1>
+      <p class="text-gray-600 mt-1">DBMS Mini Project Demo Interface</p>
+    </header>
+
+    <div class="flex border-b border-gray-200 mb-6">
+      <button id="passenger-tab" class="tab-button py-3 px-6 text-lg font-medium border-b-4 border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-600 focus:outline-none" onclick="showPanel('passenger')">Passenger/User Terminal</button>
+      <button id="admin-tab" class="tab-button py-3 px-6 text-lg font-medium border-b-4 border-transparent text-gray-500 hover:text-red-600 hover:border-red-600 focus:outline-none" onclick="showPanel('admin')">Admin Terminal</button>
+    </div>
+
+    <!-- Passenger -->
+    <div id="passenger-panel" class="tab-panel p-6 bg-white rounded-xl shadow-lg border border-gray-100 hidden">
+      <h2 class="text-2xl font-semibold text-blue-700 mb-4">Book a Charger Slot</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <input id="date" type="date" class="p-3 border rounded-lg" />
+        <input id="start" type="time" class="p-3 border rounded-lg" />
+        <input id="end" type="time" class="p-3 border rounded-lg" />
+        <select id="vehicle" class="p-3 border rounded-lg">
+          <option value="">Select Vehicle</option>
+          <option>MH12AB1234 - CCS</option>
+        </select>
+        <select id="station-select" class="p-3 border rounded-lg md:col-span-2">
+          <option value="">Loading stations...</option>
+        </select>
+      </div>
+      <button id="book-btn" class="mt-2 w-full py-3 bg-blue-600 text-white rounded-lg" onclick="createBooking()">Confirm Booking</button>
+      <div id="passenger-message" class="mt-4 p-3 hidden rounded-lg"></div>
+
+      <h3 class="text-xl font-semibold text-gray-700 mt-8 mb-4 border-t pt-4">Your Future Bookings</h3>
+      <div id="passenger-bookings" class="space-y-3"></div>
+    </div>
+
+    <!-- Admin -->
+    <div id="admin-panel" class="tab-panel p-6 bg-white rounded-xl shadow-lg border border-gray-100 hidden">
+      <h2 class="text-2xl font-semibold text-red-700 mb-4">System Overview (Admin)</h2>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-red-50 p-4 rounded-xl border border-red-200">
+          <p class="text-sm text-gray-500">Total Stations</p><p id="metric-stations" class="text-2xl font-bold text-red-800">0</p>
+        </div>
+        <div class="bg-red-50 p-4 rounded-xl border border-red-200">
+          <p class="text-sm text-gray-500">Total Users</p><p id="metric-users" class="text-2xl font-bold text-red-800">0</p>
+        </div>
+        <div class="bg-red-50 p-4 rounded-xl border border-red-200">
+          <p class="text-sm text-gray-500">Total Revenue</p><p id="metric-revenue" class="text-2xl font-bold text-red-800">₹0.00</p>
+        </div>
+        <div class="bg-red-50 p-4 rounded-xl border border-red-200">
+          <p class="text-sm text-gray-500">Highest Power</p><p id="metric-power" class="text-2xl font-bold text-red-800">0 kW</p>
+        </div>
+      </div>
+
+      <h3 class="text-xl font-semibold text-gray-700 mb-4">Charger Status Management</h3>
+      <div id="admin-chargers" class="space-y-3"></div>
+    </div>
+  </div>
+
+<script>
+const API_BASE = 'http://localhost:3000';
+const DEMO_USER_ID = 1;
+
+async function fetchStations() {
+  try {
+    const r = await fetch(`${API_BASE}/api/stations`);
+    if (!r.ok) throw new Error('Failed to load stations');
+    return await r.json();
+  } catch (e) { console.error(e); return []; }
+}
+async function fetchBookings(userId=DEMO_USER_ID) {
+  try {
+    const r = await fetch(`${API_BASE}/api/bookings_api${userId ? '?user_id=' + userId : ''}`);
+    if (!r.ok) return [];
+    return await r.json();
+  } catch (e) { return []; }
+}
+
+async function showPanel(name) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
+  document.getElementById(name + '-panel').classList.remove('hidden');
+  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('text-blue-600','border-blue-600','text-red-600','border-red-600'));
+  document.getElementById(name + '-tab').classList.add(name==='passenger' ? 'text-blue-600':'text-red-600');
+
+  if (name==='passenger') await renderPassenger();
+  else await renderAdmin();
+}
+
+async function renderPassenger() {
+  const stations = await fetchStations();
+  const select = document.getElementById('station-select');
+  select.innerHTML = '<option value="">Select Station & Charger</option>';
+  stations.forEach(s => {
+    const ports = s.ports || s.chargers || [];
+    ports.forEach(p => {
+      if ((p.status ?? 'available').toLowerCase() !== 'available') return;
+      const opt = document.createElement('option');
+      opt.value = p.port_id ?? p.id;
+      opt.textContent = `${s.name} (${s.city}) - ${p.port_label ?? p.name} ${p.power? '('+p.power+' kW)':''}`;
+      select.appendChild(opt);
+    });
+  });
+
+  const bookings = await fetchBookings();
+  const div = document.getElementById('passenger-bookings');
+  div.innerHTML = bookings.length ? bookings.map(b => 
+    `<div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200"><p class="font-bold">${b.station_name ?? b.station} - ${b.port_label ?? b.charger}</p><p class="text-sm text-gray-600">${new Date(b.start_time).toLocaleString()} - ${new Date(b.end_time).toLocaleString()}</p><span class="px-2 py-0.5 rounded-full text-xs bg-yellow-300 text-yellow-700">${b.status}</span></div>`).join('') : '<p class="text-gray-500 italic">No future confirmed bookings found.</p>';
+}
+
+async function createBooking() {
+  const date = document.getElementById('date').value;
+  const start = document.getElementById('start').value;
+  const end = document.getElementById('end').value;
+  const portId = document.getElementById('station-select').value;
+  const msg = document.getElementById('passenger-message');
+  msg.classList.add('hidden'); msg.textContent='';
+
+  if (!date || !start || !end || !portId) {
+    msg.className = 'mt-4 p-3 bg-red-50 text-red-700 rounded-lg';
+    msg.textContent = 'Fill date, start, end and choose charger.';
+    return;
+  }
+  const startIso = new Date(`${date}T${start}`).toISOString();
+  const endIso = new Date(`${date}T${end}`).toISOString();
+  const payload = { user_id: DEMO_USER_ID, port_id: Number(portId), start_time: startIso, end_time: endIso };
+
+  try {
+    // note: helper booking API is mounted at /api/bookings_api
+    const r = await fetch(`${API_BASE}/api/bookings_api`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await r.json();
+    if (r.ok) {
+      msg.className='mt-4 p-3 bg-blue-50 text-blue-700 rounded-lg';
+      msg.textContent = `SUCCESS: Booking created (id=${data.booking_id ?? data.id}).`;
+      await renderPassenger();
+    } else {
+      msg.className='mt-4 p-3 bg-red-50 text-red-700 rounded-lg';
+      msg.textContent = `ERROR: ${data.error || data.message || 'Booking failed'}`;
+    }
+  } catch (e) {
+    msg.className='mt-4 p-3 bg-red-50 text-red-700 rounded-lg';
+    msg.textContent = 'ERROR: Could not reach server.';
+  }
+}
+
+async function renderAdmin() {
+  const stations = await fetchStations();
+  document.getElementById('metric-stations').textContent = stations.length;
+  document.getElementById('metric-users').textContent = '4';
+  const allBookingsRes = await fetch(`${API_BASE}/api/bookings_api`);
+  const allBookings = allBookingsRes.ok ? await allBookingsRes.json() : [];
+  const revenue = allBookings.reduce((s,b)=> s + (Number(b.bill)||0),0);
+  document.getElementById('metric-revenue').textContent = `₹${revenue.toFixed(2)}`;
+  document.getElementById('metric-power').textContent = '120 kW';
+
+  const adminDiv = document.getElementById('admin-chargers'); adminDiv.innerHTML='';
+  stations.forEach(s => {
+    const ports=s.ports||s.chargers||[];
+    ports.forEach(p=>{
+      const status = p.status || 'available';
+      const card = document.createElement('div');
+      card.className='p-4 rounded-lg shadow-sm flex justify-between items-center ' + (status.toLowerCase()==='available' ? 'bg-green-100' : status.toLowerCase()==='in use' ? 'bg-yellow-100' : 'bg-red-100');
+      card.innerHTML = `<div><p class="font-bold">${p.port_label ?? p.name} ${p.power? '('+p.power+' kW)':''}</p><p class="text-sm text-gray-700">${s.name}, ${s.city}</p></div>
+      <div><span class="px-3 py-1 text-xs font-semibold rounded-full">${status}</span> <button class="text-gray-600" onclick="alert('Implement PATCH /api/ports/:id to update status')">Update Status</button></div>`;
+      adminDiv.appendChild(card);
+    });
+  });
+}
+
+window.onload = () => showPanel('passenger');
+</script>
+</body>
+</html>

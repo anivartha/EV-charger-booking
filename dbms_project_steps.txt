@@ -1,0 +1,52 @@
+#dbms project steps:
+
+🖥 Terminal 1 — SQL Shell (psql)
+
+This one shows your database side:
+Run these in order (you can copy directly):
+
+\c ev_booking
+\dt                     -- show all tables
+SELECT * FROM stations; -- show some existing data
+
+
+Then demo a function and a trigger:
+
+SELECT make_booking(1, 1, '2025-11-06 10:00:00+05:30', '2025-11-06 11:00:00+05:30') AS booking_id;
+SELECT * FROM bookings ORDER BY created_at DESC LIMIT 3;
+SELECT * FROM logs ORDER BY event_time DESC LIMIT 3;
+
+You’ll see:
+
+new booking created
+
+ports status auto-changes via trigger
+
+logs entry created (via trigger)
+
+Then cancel it:
+
+SELECT cancel_booking(<booking_id>, 1);
+SELECT * FROM bookings WHERE booking_id = <booking_id>;
+SELECT port_id, status FROM ports WHERE port_id = 1;
+SELECT * FROM logs ORDER BY event_time DESC LIMIT 3;
+
+
+➡️ shows function + trigger working.
+
+🖥 Terminal 2 — PowerShell (Backend)
+
+Show this already running:
+
+🚀 Server is running on port 3000
+📡 Environment: development
+🗄️  Database: ev_booking @ localhost
+
+
+Then open your browser and visit:
+
+✅ http://localhost:3000/health (you already did this)
+
+✅ http://localhost:3000/api/stations (lists stations)
+
+✅ POST /api/bookings (to create a booking, optional if time allows)
