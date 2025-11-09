@@ -23,5 +23,5 @@ Open: http://localhost:3000
 - package.json, tsconfig.json, .gitignore
 
 ## Authors
-Anagha & Anivartha — DBMS Mini Project (PESU)
-'@ | Out-File -Encoding utf8 README.md
+Anagha N Bharadwaj 
+Anivartha Upadhyaya — DBMS Mini Project (PESU)
