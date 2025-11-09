@@ -23,5 +23,4 @@ Open: http://localhost:3000
 - package.json, tsconfig.json, .gitignore
 
 ## Authors
-Anagha N Bharadwaj 
-Anivartha Upadhyaya — DBMS Mini Project (PESU)
+Anagha N Bharadwaj  &  Anivartha Upadhyaya — DBMS Mini Project (PESU)
