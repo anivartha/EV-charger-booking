@@ -26,11 +26,12 @@
 
   <!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- System Overview -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
       <h2 class="text-2xl font-bold text-gray-800 mb-4">System Overview</h2>
       
       <!-- Metrics -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
           <p class="text-sm text-gray-600">Total Stations</p>
           <p id="metric-stations" class="text-2xl font-bold text-blue-800">0</p>
@@ -48,10 +49,79 @@
           <p id="metric-bookings" class="text-2xl font-bold text-purple-800">0</p>
         </div>
       </div>
+    </div>
 
-      <!-- Charger Status Management -->
-      <h3 class="text-xl font-semibold text-gray-700 mb-4">Charger Status Management</h3>
-      <div id="admin-chargers" class="space-y-3"></div>
+    <!-- Station Management -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Station Management</h2>
+      
+      <!-- Add Station Form -->
+      <form id="stationForm" class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <input type="text" id="stationName" placeholder="Station Name" required
+          class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+        <input type="text" id="stationLocation" placeholder="Location" required
+          class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          Add Station
+        </button>
+      </form>
+
+      <!-- Stations Table -->
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revenue</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="stationsTable" class="bg-white divide-y divide-gray-200">
+            <tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Loading stations...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Charger Management -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Charger Management</h2>
+      
+      <!-- Add Charger Form -->
+      <form id="chargerForm" class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <select id="chargerStation" required
+          class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          <option value="">Select Station</option>
+        </select>
+        <input type="text" id="chargerType" placeholder="Charger Type (e.g., AC, DC Fast)" required
+          class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+        <input type="number" id="chargerPower" placeholder="Power (kW)" required
+          class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+          Add Charger
+        </button>
+      </form>
+
+      <!-- Chargers Table -->
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Station</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Power (kW)</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="chargersTable" class="bg-white divide-y divide-gray-200">
+            <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">Loading chargers...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -74,53 +144,198 @@
       window.location.href = 'login.html';
     });
 
-    // Fetch and display data
-    async function loadAdminData() {
+    // Load stats
+    async function loadStats() {
       try {
-        // Fetch stations
-        const stationsRes = await fetch(`${API_BASE}/stations`);
-        const stations = stationsRes.ok ? await stationsRes.json() : [];
+        const res = await fetch(`${API_BASE}/admin/stats`);
+        const stats = res.ok ? await res.json() : {};
         
-        document.getElementById('metric-stations').textContent = stations.length;
-
-        // Fetch bookings for revenue calculation
-        const bookingsRes = await fetch(`${API_BASE}/bookings_api`);
-        const bookings = bookingsRes.ok ? await bookingsRes.json() : [];
-        
-        const revenue = bookings.reduce((sum, b) => sum + (Number(b.total_amount) || 0), 0);
-        document.getElementById('metric-revenue').textContent = `₹${revenue.toFixed(2)}`;
-        document.getElementById('metric-bookings').textContent = bookings.filter(b => b.status === 'confirmed' || b.status === 'pending').length;
-
-        // Display chargers
-        const adminDiv = document.getElementById('admin-chargers');
-        adminDiv.innerHTML = '';
-        
-        stations.forEach(station => {
-          const chargers = station.chargers || [];
-          chargers.forEach(charger => {
-            const card = document.createElement('div');
-            card.className = 'p-4 rounded-lg shadow-sm flex justify-between items-center bg-gray-50 border border-gray-200';
-            card.innerHTML = `
-              <div>
-                <p class="font-bold">${charger.charger_name || charger.name} ${charger.power_rating_kw ? `(${charger.power_rating_kw} kW)` : ''}</p>
-                <p class="text-sm text-gray-700">${station.name}, ${station.city}</p>
-              </div>
-              <div>
-                <span class="px-3 py-1 text-xs font-semibold rounded-full ${charger.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
-                  ${charger.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-            `;
-            adminDiv.appendChild(card);
-          });
-        });
+        document.getElementById('metric-stations').textContent = stats.total_stations || 0;
+        document.getElementById('metric-users').textContent = stats.total_users || 0;
+        document.getElementById('metric-revenue').textContent = `₹${(stats.total_revenue || 0).toFixed(2)}`;
+        document.getElementById('metric-bookings').textContent = stats.active_bookings || 0;
       } catch (error) {
-        console.error('Error loading admin data:', error);
+        console.error('Error loading stats:', error);
       }
     }
 
-    loadAdminData();
+    // Load stations
+    async function loadStations() {
+      try {
+        const res = await fetch(`${API_BASE}/stations_new`);
+        const data = res.ok ? await res.json() : { stations: [] };
+        const stations = data.stations || [];
+
+        // Populate station dropdown
+        const select = document.getElementById('chargerStation');
+        select.innerHTML = '<option value="">Select Station</option>';
+        stations.forEach(s => {
+          const option = document.createElement('option');
+          option.value = s.station_id;
+          option.textContent = `${s.station_name} - ${s.location}`;
+          select.appendChild(option);
+        });
+
+        // Populate stations table
+        const tbody = document.getElementById('stationsTable');
+        if (stations.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No stations found</td></tr>';
+        } else {
+          tbody.innerHTML = stations.map(s => `
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${s.station_id}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${s.station_name}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${s.location}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹${parseFloat(s.total_revenue || 0).toFixed(2)}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <button onclick="deleteStation(${s.station_id})" class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error loading stations:', error);
+      }
+    }
+
+    // Load chargers
+    async function loadChargers() {
+      try {
+        const res = await fetch(`${API_BASE}/chargers_new`);
+        const data = res.ok ? await res.json() : { chargers: [] };
+        const chargers = data.chargers || [];
+
+        // Get stations for display
+        const stationsRes = await fetch(`${API_BASE}/stations_new`);
+        const stationsData = stationsRes.ok ? await stationsRes.json() : { stations: [] };
+        const stations = stationsData.stations || [];
+        const stationMap = {};
+        stations.forEach(s => stationMap[s.station_id] = s.station_name);
+
+        // Populate chargers table
+        const tbody = document.getElementById('chargersTable');
+        if (chargers.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No chargers found</td></tr>';
+        } else {
+          tbody.innerHTML = chargers.map(c => `
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${c.charger_id}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${stationMap[c.station_id] || 'Unknown'}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.charger_type}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.power_kw} kW</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                  c.status === 'Available' ? 'bg-green-100 text-green-700' :
+                  c.status === 'Occupied' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-red-100 text-red-700'
+                }">${c.status}</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <button onclick="deleteCharger(${c.charger_id})" class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error loading chargers:', error);
+      }
+    }
+
+    // Add station
+    document.getElementById('stationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('stationName').value;
+      const location = document.getElementById('stationLocation').value;
+
+      try {
+        const res = await fetch(`${API_BASE}/stations_new`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ station_name: name, location })
+        });
+
+        if (res.ok) {
+          document.getElementById('stationForm').reset();
+          loadStations();
+          loadStats();
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to create station');
+        }
+      } catch (error) {
+        alert('Error creating station');
+        console.error(error);
+      }
+    });
+
+    // Add charger
+    document.getElementById('chargerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const stationId = document.getElementById('chargerStation').value;
+      const type = document.getElementById('chargerType').value;
+      const power = document.getElementById('chargerPower').value;
+
+      try {
+        const res = await fetch(`${API_BASE}/chargers_new`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ station_id: stationId, charger_type: type, power_kw: power })
+        });
+
+        if (res.ok) {
+          document.getElementById('chargerForm').reset();
+          loadChargers();
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to create charger');
+        }
+      } catch (error) {
+        alert('Error creating charger');
+        console.error(error);
+      }
+    });
+
+    // Delete station
+    window.deleteStation = async (id) => {
+      if (!confirm('Are you sure you want to delete this station?')) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/stations_new/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          loadStations();
+          loadChargers();
+          loadStats();
+        } else {
+          alert('Failed to delete station');
+        }
+      } catch (error) {
+        alert('Error deleting station');
+        console.error(error);
+      }
+    };
+
+    // Delete charger
+    window.deleteCharger = async (id) => {
+      if (!confirm('Are you sure you want to delete this charger?')) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/chargers_new/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          loadChargers();
+        } else {
+          alert('Failed to delete charger');
+        }
+      } catch (error) {
+        alert('Error deleting charger');
+        console.error(error);
+      }
+    };
+
+    // Initialize
+    loadStats();
+    loadStations();
+    loadChargers();
+    setInterval(() => { loadStats(); }, 10000); // Auto-refresh stats every 10 seconds
   </script>
 </body>
 </html>
-
