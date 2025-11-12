@@ -182,5 +182,28 @@ CREATE TRIGGER trg_revenue_update
 AFTER INSERT ON bookings_new
 FOR EACH ROW EXECUTE FUNCTION update_station_revenue();
 
+-- Function: Auto-generate slots for next 3 days when charger is created
+CREATE OR REPLACE FUNCTION auto_generate_slots_3days()
+RETURNS TRIGGER AS $$
+DECLARE
+    i INT := 0;
+BEGIN
+    -- Generate slots for today and next 2 days (total 3 days)
+    WHILE i < 3 LOOP
+        PERFORM generate_slots(NEW.charger_id, CURRENT_DATE + i);
+        i := i + 1;
+    END LOOP;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger: Auto-generate slots when charger is inserted
+DROP TRIGGER IF EXISTS trg_auto_generate_slots_3days ON chargers_new;
+CREATE TRIGGER trg_auto_generate_slots_3days
+AFTER INSERT ON chargers_new
+FOR EACH ROW
+EXECUTE FUNCTION auto_generate_slots_3days();
+
 COMMIT;
 

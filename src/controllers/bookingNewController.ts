@@ -29,6 +29,25 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
     // Calculate amount (simple: 30 min = 50, 1 hour = 100, etc.)
     const start = new Date(slot_start);
     const end = new Date(slot_end);
+    
+    // Validate booking date is within 3-day range (today + next 2 days)
+    const bookingDate = new Date(start);
+    bookingDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const maxDate = new Date(today);
+    maxDate.setDate(maxDate.getDate() + 2); // Today + 2 days = 3 days total
+    
+    if (bookingDate < today || bookingDate > maxDate) {
+      res.status(400).json({ 
+        error: 'Bookings can only be made for the next 3 days (today and next 2 days)',
+        allowed_range: {
+          from: today.toISOString().split('T')[0],
+          to: maxDate.toISOString().split('T')[0]
+        }
+      });
+      return;
+    }
     const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
     const amount = Math.round(hours * 100 * 100) / 100; // ₹100 per hour
 
