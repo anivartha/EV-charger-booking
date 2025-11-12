@@ -14,7 +14,7 @@ const startServer = async (): Promise<void> => {
   try {
     // Initialize database connection
     console.log('Initializing database connection...');
-    initializeDatabase();
+    await initializeDatabase();
 
     // Test database connection
     const isConnected = await testConnection();
