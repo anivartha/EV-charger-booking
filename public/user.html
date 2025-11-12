@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard - EV Charger Booking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <!-- Navigation Header -->
+  <nav class="bg-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <h1 class="text-xl font-bold text-gray-800">EV Charger Booking - User</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span id="welcomeMessage" class="text-gray-700"></span>
+          <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Booking Form -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Book a Charger Slot</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <input id="date" type="date" class="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+        <input id="start" type="time" class="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+        <input id="end" type="time" class="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+        <select id="charger-select" class="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500">
+          <option value="">Loading chargers...</option>
+        </select>
+      </div>
+
+      <div id="booking-message" class="hidden p-3 rounded-lg text-sm mb-4"></div>
+
+      <button id="book-btn" class="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+        Confirm Booking
+      </button>
+    </div>
+
+    <!-- My Bookings -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h3 class="text-xl font-semibold text-gray-700 mb-4">My Bookings</h3>
+      <div id="user-bookings" class="space-y-3">
+        <p class="text-gray-500 italic">Loading bookings...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+    // Check authentication
+    if (!user || user.role !== 'user') {
+      alert('Access denied. Please login as user.');
+      window.location.href = 'login.html';
+    }
+
+    // Display welcome message
+    document.getElementById('welcomeMessage').textContent = `Welcome, ${user.username} (${user.role})`;
+
+    // Logout handler
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+    });
+
+    // Load stations/chargers
+    async function loadChargers() {
+      try {
+        const response = await fetch(`${API_BASE}/stations`);
+        const stations = response.ok ? await response.json() : [];
+        
+        const select = document.getElementById('charger-select');
+        select.innerHTML = '<option value="">Select Charger</option>';
+        
+        stations.forEach(station => {
+          const chargers = station.chargers || [];
+          chargers.forEach(charger => {
+            if (charger.is_active) {
+              const option = document.createElement('option');
+              option.value = charger.id;
+              option.textContent = `${station.name} - ${charger.charger_name} (${charger.power_rating_kw} kW) - ₹${charger.price_per_hour}/hr`;
+              select.appendChild(option);
+            }
+          });
+        });
+      } catch (error) {
+        console.error('Error loading chargers:', error);
+      }
+    }
+
+    // Load user bookings
+    async function loadBookings() {
+      try {
+        const response = await fetch(`${API_BASE}/bookings_api?user_id=${user.id}`);
+        const bookings = response.ok ? await response.json() : [];
+        
+        const div = document.getElementById('user-bookings');
+        if (bookings.length === 0) {
+          div.innerHTML = '<p class="text-gray-500 italic">No bookings found.</p>';
+        } else {
+          div.innerHTML = bookings.map(booking => `
+            <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p class="font-bold">${booking.charger_name || 'Charger'} - ${booking.booth_name || 'Station'}</p>
+              <p class="text-sm text-gray-600">${new Date(booking.booking_date).toLocaleDateString()} ${booking.start_time} - ${booking.end_time}</p>
+              <p class="text-sm text-gray-600">Amount: ₹${booking.total_amount || 0}</p>
+              <span class="px-2 py-1 rounded-full text-xs bg-yellow-300 text-yellow-700">${booking.status}</span>
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error loading bookings:', error);
+      }
+    }
+
+    // Create booking
+    document.getElementById('book-btn').addEventListener('click', async () => {
+      const date = document.getElementById('date').value;
+      const start = document.getElementById('start').value;
+      const end = document.getElementById('end').value;
+      const chargerId = document.getElementById('charger-select').value;
+      const messageDiv = document.getElementById('booking-message');
+
+      if (!date || !start || !end || !chargerId) {
+        messageDiv.className = 'p-3 rounded-lg text-sm mb-4 bg-red-50 text-red-700';
+        messageDiv.textContent = 'Please fill in all fields';
+        messageDiv.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        // Format dates for API
+        const startDateTime = `${date}T${start}:00`;
+        const endDateTime = `${date}T${end}:00`;
+
+        const response = await fetch(`${API_BASE}/bookings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            charger_id: chargerId,
+            booking_date: date,
+            start_time: start,
+            end_time: end
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          messageDiv.className = 'p-3 rounded-lg text-sm mb-4 bg-green-50 text-green-700';
+          messageDiv.textContent = 'Booking created successfully!';
+          messageDiv.classList.remove('hidden');
+          
+          // Reload bookings
+          loadBookings();
+          
+          // Clear form
+          document.getElementById('date').value = '';
+          document.getElementById('start').value = '';
+          document.getElementById('end').value = '';
+          document.getElementById('charger-select').value = '';
+        } else {
+          messageDiv.className = 'p-3 rounded-lg text-sm mb-4 bg-red-50 text-red-700';
+          messageDiv.textContent = data.error || 'Booking failed';
+          messageDiv.classList.remove('hidden');
+        }
+      } catch (error) {
+        messageDiv.className = 'p-3 rounded-lg text-sm mb-4 bg-red-50 text-red-700';
+        messageDiv.textContent = 'Could not connect to server';
+        messageDiv.classList.remove('hidden');
+        console.error('Booking error:', error);
+      }
+    });
+
+    // Initialize
+    loadChargers();
+    loadBookings();
+  </script>
+</body>
+</html>
+
