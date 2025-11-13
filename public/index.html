@@ -176,7 +176,20 @@ async function renderAdmin() {
   });
 }
 
-window.onload = () => showPanel('passenger');
+window.onload = () => {
+  // Check if user is logged in
+  const user = localStorage.getItem('user');
+  if (!user) {
+    window.location.href = 'login.html';
+  } else {
+    const userData = JSON.parse(user);
+    if (userData.role === 'admin') {
+      window.location.href = 'admin.html';
+    } else {
+      window.location.href = 'user.html';
+    }
+  }
+};
 </script>
 </body>
 </html>

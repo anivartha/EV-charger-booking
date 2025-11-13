@@ -9,6 +9,8 @@ export interface User {
   id: string;
   email: string;
   password_hash: string;
+  username?: string;
+  password?: string;
   full_name: string;
   phone?: string;
   role: 'user' | 'owner' | 'admin';
@@ -112,6 +114,42 @@ export class UserModel {
     );
 
     return result.rows;
+  }
+
+  /**
+   * Find user by username and role (for simple login)
+   */
+  static async findByUsernameAndRole(username: string, role: 'admin' | 'user'): Promise<User | null> {
+    const result = await query(
+      'SELECT * FROM users WHERE username = $1 AND role = $2',
+      [username, role]
+    );
+
+    return result.rows[0] || null;
+  }
+
+  /**
+   * Create user with username and password (simple registration)
+   */
+  static async createSimple(userData: {
+    username: string;
+    password: string;
+    role?: 'admin' | 'user';
+  }): Promise<User> {
+    const result = await query(
+      `INSERT INTO users (username, password, role, email, full_name)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [
+        userData.username,
+        userData.password, // Store plain text as per requirements (no security)
+        userData.role || 'user',
+        `${userData.username}@example.com`, // Dummy email
+        userData.username // Use username as full_name
+      ]
+    );
+
+    return result.rows[0];
   }
 }
 

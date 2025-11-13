@@ -13,6 +13,12 @@ import authRoutes from './routes/authRoutes';
 import bookingRoutes from './routes/bookingRoutes';
 import stationRoutes from './routes/stationRoutes';
 import bookingApiRoutes from './routes/bookingApiRoutes';
+// New schema routes
+import stationRoutesNew from './routes/stationRoutesNew';
+import chargerRoutesNew from './routes/chargerRoutesNew';
+import slotRoutes from './routes/slotRoutes';
+import bookingRoutesNew from './routes/bookingRoutesNew';
+import adminRoutes from './routes/adminRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -50,6 +56,13 @@ app.use('/api/bookings', bookingRoutes);
 // Helper routes we added for UI — station list and a simpler bookings API
 app.use('/api/stations', stationRoutes);
 app.use('/api/bookings_api', bookingApiRoutes);
+
+// New schema routes
+app.use('/api/stations_new', stationRoutesNew);
+app.use('/api/chargers_new', chargerRoutesNew);
+app.use('/api/slots', slotRoutes);
+app.use('/api/bookings_new', bookingRoutesNew);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
