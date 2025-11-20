@@ -114,31 +114,3 @@ node server.js
 http://localhost:3000
 
 
-🎯 PROJECT GOALS
-
-Provide smooth EV charger slot booking
-Use proper relational DB design
-Implement real-world DB features (Triggers, Procedures)
-GUI-integrated CRUD operations
-Prevent booking conflicts
-Maintain logs & revenue updates
-
-🏁 CONCLUSION
-
-This project demonstrates a complete database-driven web application integrating
-MySQL + Node.js + GUI. It satisfies all requirements of a DBMS mini-project such as:
-
-✔ ER diagram
-✔ Relational schema
-✔ Normalization
-✔ CRUD operations
-✔ Triggers
-✔ Procedures
-✔ Nested, Join & Aggregate Queries
-✔ Graphical Interface
-
-🙌 ACKNOWLEDGEMENTS
-
-Thanks to faculty of PES University for guidance and evaluation.
-
----
