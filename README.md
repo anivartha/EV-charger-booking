@@ -113,40 +113,14 @@ node server.js
 5️⃣ Open in Browser
 http://localhost:3000
 
-🖼️ SCREENSHOTS
-
-Add the following screenshots in your repo:
-
-Login Page
-
-Admin Dashboard
-
-Add Station Page
-
-Add Charger Page
-
-User Dashboard
-
-Slot Selection
-
-Booking Confirmation
-
-SQL Triggers Output
-
-(Place them in a /screenshots folder and embed here)
 
 🎯 PROJECT GOALS
 
 Provide smooth EV charger slot booking
-
 Use proper relational DB design
-
 Implement real-world DB features (Triggers, Procedures)
-
 GUI-integrated CRUD operations
-
 Prevent booking conflicts
-
 Maintain logs & revenue updates
 
 🏁 CONCLUSION
@@ -167,17 +141,4 @@ MySQL + Node.js + GUI. It satisfies all requirements of a DBMS mini-project such
 
 Thanks to faculty of PES University for guidance and evaluation.
 
-📜 LICENSE
-
-This project is created for academic use under PES University DBMS Mini-Project guidelines.
-
-
 ---
-
-If you want, I can also generate:  
-✅ Perfect ER diagram (clean image)  
-✅ Relational schema diagram  
-✅ Procedures + triggers in report-ready format  
-✅ A PDF report from this README  
-
-Just tell me **“make the report”** and I’ll generate the full printable version.
