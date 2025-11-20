@@ -1,0 +1,162 @@
+/* style.css - layout matching your screenshots (clean + large card + blue CTA) */
+
+/* Base */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+*{box-sizing:border-box}
+body {
+  font-family: 'Poppins', sans-serif;
+  margin:0;
+  background:#f5f7fb;
+  color:#222831;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* top bar */
+.topbar {
+  background:#fff;
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 28px;
+  box-shadow:0 2px 8px rgba(19,24,33,0.06);
+  position:sticky;
+  top:0; z-index:50;
+}
+.topbar .brand { font-weight:700; color:#15202b; }
+.topbar .right { display:flex; gap:12px; align-items:center; }
+
+/* container width */
+.container {
+  max-width:1180px;
+  margin:26px auto;
+  padding:0 18px 60px;
+}
+
+/* big card */
+.card-large {
+  background: #fff;
+  border-radius:12px;
+  padding:28px;
+  box-shadow:0 8px 30px rgba(10,20,40,0.06);
+  margin-bottom:22px;
+}
+
+/* titles */
+.h1 { font-size:34px; font-weight:700; margin:6px 0 6px; color:#142033; }
+.h2 { font-size:20px; font-weight:700; color:#142033; margin:0 0 12px; }
+
+/* form layout - two columns */
+.grid-2 {
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:18px;
+  align-items:start;
+}
+.field {
+  display:block;
+  margin-bottom:14px;
+}
+label {
+  display:block;
+  font-weight:600;
+  margin-bottom:8px;
+  color:#2f3a44;
+}
+
+/* inputs/selects */
+input[type="text"], input[type="date"], select, .date-input {
+  width:100%;
+  padding:14px 14px;
+  border-radius:10px;
+  border:1px solid #e3e8ee;
+  background:#fff;
+  font-size:15px;
+  color:#17212a;
+}
+
+/* slot box */
+.slots-box {
+  background:#fbfdff;
+  border-radius:10px;
+  border:1px solid #eef3f8;
+  padding:16px;
+  min-height:72px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+/* slot row */
+.slot-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 12px;
+  background:#fff;
+  border-radius:8px;
+  border:1px solid #f0f3f6;
+}
+.slot-row.booked { background:#fff6f6; border-color:#ffecec; color:#b33a3a; }
+.slot-row.available { background:#f7fff6; border-color:#e2f9e8; color:#0d8140; }
+
+/* legend */
+.legend { display:flex; gap:12px; align-items:center; margin-top:10px; }
+.legend .chip { display:inline-flex; gap:8px; align-items:center; font-size:14px; color:#35414a; }
+.legend .dot { width:14px; height:14px; border-radius:4px; }
+
+/* CTA confirm */
+.confirm-cta {
+  margin-top:18px;
+  width:100%;
+  background:#2563eb;
+  color:white;
+  padding:18px 22px;
+  border-radius:12px;
+  font-size:18px;
+  font-weight:700;
+  border:none;
+  cursor:pointer;
+  box-shadow:0 6px 20px rgba(37,99,235,0.18);
+}
+
+/* smaller panels for "My Bookings" etc */
+.panel {
+  background:#fff;
+  border-radius:12px;
+  padding:18px;
+  box-shadow:0 8px 24px rgba(12,18,30,0.04);
+  margin-top:16px;
+}
+
+/* admin dashboard overview boxes */
+.overview {
+  display:flex;
+  gap:14px;
+  margin-bottom:18px;
+}
+.kpi {
+  flex:1;
+  background:#fbfdff;
+  border-radius:10px;
+  padding:12px;
+  border:1px solid #eef3f8;
+}
+.kpi strong { display:block; font-size:18px; margin-top:6px; color:#16324a }
+
+/* table */
+.table { width:100%; border-collapse:collapse; margin-top:12px; }
+.table th, .table td { padding:12px 10px; border-bottom:1px solid #f1f4f8; text-align:left; font-size:14px; }
+.table thead th { background:transparent; color:#5b6770; font-weight:600; }
+
+/* buttons small */
+.btn-blue { background:#2563eb; color:white; padding:10px 12px; border-radius:8px; border:none; cursor:pointer; }
+.btn-green { background:#12b886; color:white; padding:10px 12px; border-radius:8px; border:none; cursor:pointer; }
+.btn-redsmall { background:transparent; color:#e11d48; border:none; cursor:pointer; }
+
+/* responsive */
+@media (max-width:900px) {
+  .grid-2 { grid-template-columns:1fr; }
+  .container { padding:0 12px; }
+  .card-large { padding:18px; }
+}

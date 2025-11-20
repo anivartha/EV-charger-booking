@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Charger Login</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-container h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e3e8ee;
+            border-radius: 10px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        #loginError {
+            color: #b91c1c;
+            margin: 10px 0;
+            display: none;
+            font-size: 14px;
+            padding: 10px;
+            background: #fee;
+            border-radius: 8px;
+        }
+        #doLogin {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        #doLogin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        #doLogin:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>⚡ EV Charger</h1>
+        
+        <div class="form-group">
+            <label for="role">Select Role</label>
+            <select id="role">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email / Username</label>
+            <input id="email" type="text" placeholder="example@ev.com">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input id="password" type="password" placeholder="Enter your password">
+        </div>
+
+        <div id="loginError" style="display:none;"></div>
+
+        <button id="doLogin">Login</button>
+    </div>
+
+    <script>
+        document.getElementById('doLogin').addEventListener('click', async () => {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const role = document.getElementById('role').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            // Reset error message
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+            
+            if (!email || !password) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Please enter email and password';
+                return;
+            }
+            
+            try {
+                console.log('Attempting login with:', { email, password, role });
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, role })
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (data.ok) {
+                    localStorage.setItem('ev_user', JSON.stringify(data));
+                    console.log('Login successful, redirecting...');
+                    window.location.href = role === 'admin' ? '/admin.html' : '/user.html';
+                } else {
+                    errorDiv.style.display = 'block';
+                    errorDiv.textContent = data.message || 'Invalid credentials';
+                }
+            } catch (err) {
+                console.error('Login error:', err);
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Login error: ' + err.message;
+            }
+        });
+
+        // Allow Enter key to trigger login
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('doLogin').click();
+            }
+        });
+    </script>
+</body>
+</html>

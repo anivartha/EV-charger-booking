@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"><title>EV Charger Booking - User</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">EV Charger Booking - User</div>
+    <div class="right">
+      <div id="userWelcome" style="color:#6b7280;"></div>
+      <button onclick="logout()" class="btn-redsmall" style="background:#ef4444;color:white;padding:8px 12px;border-radius:8px;">Logout</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card-large">
+      <h2 class="h2">Book a Charger Slot</h2>
+
+      <div class="grid-2">
+        <div>
+          <label>Select Station</label>
+          <select id="stationSelect"></select>
+        </div>
+
+        <div>
+          <label>Select Charger</label>
+          <select id="chargerSelect"></select>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <label>Select Date (Next 3 Days Only)</label>
+        <input id="dateInput" type="date" />
+        <div style="color:#8b95a0; font-size:13px; margin-top:6px;">Bookings allowed only for today and next 2 days</div>
+      </div>
+
+      <div style="margin-top:18px;">
+        <label>Available Time Slots (30 minutes each)</label>
+        <div class="slots-box" id="slotsArea">
+          <div style="color:#9aa7b3;">No slots available for this date</div>
+        </div>
+
+        <div class="legend">
+          <div class="chip"><span class="dot" style="background:#a7f3d0"></span>Available</div>
+          <div class="chip"><span class="dot" style="background:#ffd6d6"></span>Booked</div>
+          <div class="chip"><span class="dot" style="background:#dbeafe"></span>Selected</div>
+        </div>
+
+        <button id="confirmBtn" class="confirm-cta">Confirm Booking</button>
+      </div>
+    </div>
+
+    <div class="panel" id="myBookings">
+      <h3 class="h2" style="font-size:18px;">My Bookings</h3>
+      <div id="bookingsList" style="color:#64748b;">No bookings found.</div>
+    </div>
+  </div>
+
+<script>
+async function api(path, opts){ const r=await fetch(path, opts); return r.json(); }
+function logout(){ localStorage.removeItem('ev_user'); location.href='/'; }
+
+let selectedSlotId = null;
+
+async function loadStations(){
+  const stations = await api('/api/stations');
+  const ssel = document.getElementById('stationSelect'); ssel.innerHTML='';
+  stations.forEach(s=> ssel.appendChild(Object.assign(document.createElement('option'), { value:s.station_id, textContent: s.station_name + ' - ' + s.location })));
+  if(stations.length) loadChargers();
+}
+
+async function loadChargers(){
+  const station_id = document.getElementById('stationSelect').value;
+  const chargers = await api('/api/chargers?station_id=' + station_id);
+  const csel = document.getElementById('chargerSelect'); csel.innerHTML='';
+  chargers.forEach(c=> csel.appendChild(Object.assign(document.createElement('option'), { value:c.booth_id, textContent: c.booth_name + ' ('+c.charger_type+')' })));
+  loadSlots(); // load slots for default
+}
+
+function dateToSQL(d){
+  const yy=d.getFullYear(); const mm=('0'+(d.getMonth()+1)).slice(-2); const dd=('0'+d.getDate()).slice(-2);
+  return `${yy}-${mm}-${dd}`;
+}
+
+function ensureDateRange(){
+  const inEl = document.getElementById('dateInput');
+  const today = new Date(); const t = dateToSQL(today);
+  const d2 = new Date(); d2.setDate(today.getDate()+2);
+  const t2 = dateToSQL(d2);
+  inEl.min = t; inEl.max = t2;
+  if(!inEl.value) inEl.value = t;
+}
+
+async function loadSlots(){
+  selectedSlotId = null;
+  const booth_id = document.getElementById('chargerSelect').value;
+  const date = document.getElementById('dateInput').value;
+  if(!booth_id || !date) return;
+  const slots = await api('/api/slots?booth_id=' + booth_id + '&date=' + date);
+  const area = document.getElementById('slotsArea'); area.innerHTML='';
+  if(!slots || slots.length===0){ area.innerHTML = '<div style="color:#94a3b8;">No slots available for this date</div>'; return; }
+  slots.forEach(s=>{
+    const row = document.createElement('div');
+    row.className = 'slot-row ' + (s.is_booked? 'booked':'available');
+    row.innerHTML = `<div>${s.slot_date} ${s.start_time} - ${s.end_time}</div>`;
+    if(!s.is_booked){
+      const btn = document.createElement('button'); btn.className='slot-btn'; btn.textContent='Book';
+      btn.onclick = ()=> { selectedSlotId = s.slot_id; Array.from(document.querySelectorAll('.slot-row')).forEach(el=>el.style.boxShadow='none'); row.style.boxShadow='0 6px 18px rgba(37,99,235,0.12)'; };
+      row.appendChild(btn);
+    } else {
+      const sp = document.createElement('div'); sp.textContent='Booked'; sp.style.opacity=0.9; row.appendChild(sp);
+    }
+    area.appendChild(row);
+  });
+}
+
+async function confirmBooking(){
+  const user = JSON.parse(localStorage.getItem('ev_user')||'{}');
+  if(!user.user){ alert('login first'); return; }
+  if(!selectedSlotId) return alert('Select a slot first');
+  const res = await api('/api/bookings', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ slot_id: selectedSlotId, user_id: user.user.user_id })});
+  alert('Booking created with id: ' + res.booking_id);
+  loadSlots(); loadMyBookings();
+}
+
+async function loadMyBookings(){
+  const u = JSON.parse(localStorage.getItem('ev_user')||'{}');
+  if(!u.user) return;
+  // quick query: show booking rows from booking table (no API route for bookings GET)
+  const rows = await api('/api/slots'); // fallback
+  document.getElementById('bookingsList').textContent = 'No bookings found.';
+  // we'll just show from DB by fetching booking table via simple endpoint if needed (can add)
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const u = JSON.parse(localStorage.getItem('ev_user')||'{}');
+  document.getElementById('userWelcome').textContent = u.user ? `Welcome, ${u.user.name} (${u.role || 'user'})` : '';
+  ensureDateRange();
+  document.getElementById('stationSelect').addEventListener('change', loadChargers);
+  document.getElementById('chargerSelect').addEventListener('change', loadSlots);
+  document.getElementById('dateInput').addEventListener('change', loadSlots);
+  document.getElementById('confirmBtn').addEventListener('click', confirmBooking);
+  await loadStations();
+  await loadChargers();
+  await loadSlots();
+  await loadMyBookings();
+});
+</script>
+</body>
+</html>
